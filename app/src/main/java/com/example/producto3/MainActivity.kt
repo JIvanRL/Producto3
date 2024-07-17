@@ -11,10 +11,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,6 +41,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.tv.foundation.lazy.list.TvLazyColumn
+import androidx.tv.foundation.lazy.list.items
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.example.producto3.ui.theme.Producto3Theme
@@ -45,6 +52,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.ui.graphics.Color.Companion.Black as Black1
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -134,8 +142,8 @@ fun Portada(navController: NavController) {
                         Brush.horizontalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                Color.Black.copy(alpha = 0.10f),
-                                Color.Black.copy(alpha = 0.10f),
+                                Black1.copy(alpha = 0.10f),
+                                Black1.copy(alpha = 0.10f),
                                 Color.Transparent
                             )
                         )
@@ -189,6 +197,65 @@ fun Portada(navController: NavController) {
                 )
             }
         }
+    }
+}
+// Lista de aplicaciones simulada
+val appList = listOf(
+    "YouTube",
+    "Netflix",
+    "Prime Video",
+    "Hulu",
+    "Disney+",
+    "Spotify",
+    "Twitch",
+    "ESPN"
+)
+
+@Composable
+fun SmartTvScreen() {
+    Surface() {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Apps",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White,
+                modifier = Modifier.padding(8.dp)
+            )
+            AppList(appList = appList)
+        }
+    }
+}
+
+@Composable
+fun AppList(appList: List<String>) {
+    TvLazyColumn(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(appList) { app ->
+            AppListItem(appName = app)
+        }
+    }
+}
+
+@Composable
+fun AppListItem(appName: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .background(color = Color.DarkGray)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = appName,
+            style = MaterialTheme.typography.titleLarge,
+            color = Color.White
+        )
     }
 }
 
