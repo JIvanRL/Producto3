@@ -62,6 +62,8 @@ dependencies {
     implementation(libs.androidx.contentpager)
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("androidx.compose.material:material:1.0.0")
+    implementation(libs.androidx.material3.android)  // o la versión más reciente disponible
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
