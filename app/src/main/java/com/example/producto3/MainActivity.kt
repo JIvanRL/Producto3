@@ -1,11 +1,8 @@
 package com.example.producto3
 
-import android.content.Context
-import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -25,8 +22,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Button
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -37,10 +44,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -51,16 +59,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.tv.foundation.lazy.list.TvLazyRow
 import androidx.tv.foundation.lazy.list.rememberTvLazyListState
-import androidx.tv.material3.Button
-import androidx.tv.material3.ButtonDefaults
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Surface
-import androidx.tv.material3.Text
 import com.example.producto3.ui.theme.Producto3Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -69,6 +68,7 @@ import java.time.LocalDateTime
 import java.time.format.TextStyle
 import java.util.Locale
 import androidx.compose.ui.graphics.Color.Companion.Black as Black1
+
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -231,33 +231,19 @@ fun Portada(navController: NavController) {
     }
 }
 
-
-// Lista de imágenes simulada
-val imageList = listOf(
-    R.drawable.imagen2,
-    R.drawable.imagen3,
-    R.drawable.imagen4,
-    R.drawable.imagen5,
-    R.drawable.imagen6,
-    R.drawable.imagen7,
-    // Agrega más imágenes aquí
-)
-
 @Composable
-fun SmartTvScreen(navController: NavController, context: Context) {
-    // Lista de imágenes para el carrusel (asegúrate de definir esto adecuadamente)
-
+fun SmartTvScreen(navController: NavController) {
+    val context = LocalContext.current
     Surface(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(Black)
             .padding(16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            // Botones con transparencia ligera
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -283,24 +269,22 @@ fun SmartTvScreen(navController: NavController, context: Context) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Carrusel de imágenes con desplazamiento automático
-            AutoScrollingCarousel(imageList = imageList)
+            AutoScrollingCarousel(movieList = movieList, navController = navController)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Otro carrusel de imágenes (ajustado a 120.dp)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp) // Ajusta la altura del carrusel según sea necesario
+                    .height(120.dp)
             ) {
-                TvLazyRow(
+                LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(imageList.size) { index ->
-                        val imageResId = imageList[index]
+                    items(movieList.size) { index ->
+                        val movie = movieList[index]
                         Image(
-                            painter = painterResource(id = imageResId),
+                            painter = painterResource(id = movie.imageResId),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxHeight()
@@ -312,13 +296,12 @@ fun SmartTvScreen(navController: NavController, context: Context) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Contenedor de aplicaciones
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp)
             ) {
-                TvLazyRow(
+                LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(appList.size) { index ->
@@ -326,9 +309,11 @@ fun SmartTvScreen(navController: NavController, context: Context) {
                         AppListItem(appName = app) { selectedApp ->
                             when (selectedApp) {
                                 "YouTube" -> openYouTubeApp(context)
-                                "Spotify" -> openSpotifyApp(context)
-                                "Netflix" -> openNetflixApp(context)
+                                "Spotify" -> navController.navigate("music_screen")
+                                "Netflix" -> openCrunchyrollApp(context)
                                 "Google" -> openGoogleApp(context)
+                                "Play Store" -> openPlayStoreApp(context)
+                                "Hulu" -> openSpotifyApp(context)
                                 else -> navController.navigate("detail_screen/$selectedApp")
                             }
                         }
@@ -339,48 +324,117 @@ fun SmartTvScreen(navController: NavController, context: Context) {
     }
 }
 
+
+//Carrusel
 @Composable
-fun AutoScrollingCarousel(imageList: List<Int>) {
-    val scrollState = rememberTvLazyListState() // Usa TvLazyListState en lugar de LazyListState
-    val coroutineScope = rememberCoroutineScope()
+fun AutoScrollingCarousel(movieList: List<Movie>, navController: NavController) {
+    val scrollState = rememberTvLazyListState()
+    val scrollInterval = 3000L
+    val scrollAmount = 1
 
-    // Ajusta la velocidad y el intervalo del desplazamiento automático aquí
-    val scrollInterval = 3000L // 3 segundos entre desplazamientos
-    val scrollAmount = 1 // Cuántos elementos se deben desplazar cada vez
-
-    // Configura el efecto de lanzamiento para el desplazamiento automático
     LaunchedEffect(Unit) {
         while (true) {
-            delay(scrollInterval) // Espera el intervalo
-            val nextItemIndex = (scrollState.firstVisibleItemIndex + scrollAmount) % imageList.size
-            scrollState.animateScrollToItem(nextItemIndex) // Anima el desplazamiento
+            delay(scrollInterval)
+            val nextItemIndex = (scrollState.firstVisibleItemIndex + scrollAmount) % movieList.size
+            scrollState.animateScrollToItem(nextItemIndex)
         }
     }
 
     Box(
         modifier = Modifier
-                       .background(Color.Transparent)
+            .background(Color.Transparent)
             .fillMaxWidth()
             .size(150.dp)
     ) {
-        TvLazyRow(
+        LazyRow(
             state = scrollState,
             horizontalArrangement = Arrangement.spacedBy(30.dp)
         ) {
-            items(imageList.size) { index ->
-                val imageResId = imageList[index]
+            items(movieList.size) { index ->
+                val movie = movieList[index]
                 Image(
-                    painter = painterResource(id = imageResId),
-                    contentDescription = null, // No se necesita descripción para imágenes
+                    painter = painterResource(id = movie.imageResId),
+                    contentDescription = null,
                     modifier = Modifier
-                        .fillMaxHeight() // Ocupa todo el espacio vertical
+                        .fillMaxHeight()
                         .size(300.dp)
+                        .clickable {
+                            navController.navigate("Description/${movie.title}")
+                        }
                 )
             }
         }
     }
 }
 
+
+//Pantalla para el visto de descripccion
+@Composable
+fun MovieDescriptionScreen(navController: NavController, movieTitle: String?) {
+    val movie = movieList.find { it.title == movieTitle }
+
+    movie?.let {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Black)
+        ) {
+            // Muestra el video
+            VideoPlayer(url = movie.videoUrl)
+
+            // Muestra la imagen con un gradiente
+            Image(
+                painter = painterResource(id = movie.imageResId),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(colors = listOf(Color.Transparent, Black), startY = 300f))
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+                    .align(Alignment.BottomStart)
+            ) {
+                Spacer(modifier = Modifier.height(300.dp)) // Espacio para mostrar la imagen antes del contenido
+                Text(
+                    text = movie.title,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Text(
+                    text = "Fecha de lanzamiento: ${movie.releaseDate}",
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Text(
+                    text = movie.description,
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+            }
+        }
+    } ?: run {
+        // Manejar el caso donde la película no se encuentra
+        Text(
+            text = "Película no encontrada",
+            color = Color.White,
+            modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center)
+        )
+    }
+}
 
 
 @Composable
@@ -393,48 +447,6 @@ fun TransparentButton2(text: String) {
             .clip(MaterialTheme.shapes.small) // Redondeado
     ) {
         Text(text = text, color = Color.White)
-    }
-}
-
-fun openYouTubeApp(context: Context) {
-    val youtubePackage = "com.google.android.youtube.tv"
-    val launchIntent = context.packageManager.getLaunchIntentForPackage(youtubePackage)
-    if (launchIntent != null) {
-        context.startActivity(launchIntent)
-    } else {
-        // Manejar el caso en que la aplicación no esté instalada
-        Toast.makeText(context, "YouTube no está instalada.", Toast.LENGTH_SHORT).show()
-    }
-}
-
-fun openSpotifyApp(context: Context) {
-    val spotifyPackage = "com.spotify.music"
-    val launchIntent: Intent? = context.packageManager.getLaunchIntentForPackage(spotifyPackage)
-    if (launchIntent != null) {
-        context.startActivity(launchIntent)
-    } else {
-        // Manejar el caso en que la aplicación no esté instalada
-        Toast.makeText(context, "Spotify no está instalada.", Toast.LENGTH_SHORT).show()
-    }
-}
-fun openNetflixApp(context: Context) {
-    val netflixPackage = "com.netflix.mediaclient"
-    val launchIntent: Intent? = context.packageManager.getLaunchIntentForPackage(netflixPackage)
-    if (launchIntent != null) {
-        context.startActivity(launchIntent)
-    } else {
-        // Manejar el caso en que la aplicación no esté instalada
-        Toast.makeText(context, "Netflix no está instalada.", Toast.LENGTH_SHORT).show()
-    }
-}
-fun openGoogleApp(context: Context) {
-    val googlePackage = "com.google.android.googlequicksearchbox"
-    val launchIntent: Intent? = context.packageManager.getLaunchIntentForPackage(googlePackage)
-    if (launchIntent != null) {
-        context.startActivity(launchIntent)
-    } else {
-        // Manejar el caso en que la aplicación no esté instalada
-        Toast.makeText(context, "Google no está instalada.", Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -456,18 +468,20 @@ fun getAppImageResource(appName: String): Int {
     }
 }
 //Fuuncion para la musica
+data class Song(val backgroundResId: Int, val audioResId: Int, val title: String)
 @Composable
 fun MusicScreen(navController: NavController) {
     val context = LocalContext.current
     var currentSongIndex by remember { mutableStateOf(0) }
     var isPlaying by remember { mutableStateOf(false) }
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
-    var fondo =  FondoConDegradadoRadial(showImage = true) // No muestra la imagen en ScreenApps
 
     val songs = listOf(
         Song(R.drawable.fondo, R.raw.beautiful, "Beautiful Things"),
-        Song(R.drawable.fondo, R.raw.no, "No que eras fan")
-        // Song(R.drawable.austronauta, R.raw.musica3, "Song 3")
+        Song(R.drawable.fondo, R.raw.no, "No que eras fan"),
+        Song(R.drawable.fondo, R.raw.pain2, "Pain- Jhos Apa"),
+        Song(R.drawable.fondo, R.raw.hakuna, "DAAZ - HAKUNA MATATA (feat. Homievaldes, Fano) (prod. Meny Mendez) (Video Oficial)")
+        // Agrega más canciones aquí si lo deseas
     )
 
     fun playSong() {
@@ -506,96 +520,108 @@ fun MusicScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(Black)
     ) {
+        // Imagen de fondo de la canción actual
         Image(
             painter = painterResource(id = songs[currentSongIndex].backgroundResId),
             contentDescription = null,
-            contentScale = ContentScale.FillBounds,
-            modifier = Modifier.fillMaxSize()
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.5f) // Opcional: reducir la opacidad de la imagen de fondo
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(16.dp)
         ) {
+            // Título de la canción actual
             Text(
                 text = songs[currentSongIndex].title,
                 color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 16.dp, bottom = 32.dp)
             )
-            Spacer(modifier = Modifier.height(16.dp))
+
+            // Controles de reproducción
+            Spacer(modifier = Modifier.weight(1f)) // Espacio flexible para centrar los controles
+
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                TransparentButton(onClick = { previousSong() }, iconResId = R.drawable.ic_previous)
-                TransparentButton(
-                    onClick = {
-                        if (isPlaying) {
-                            pauseSong()
-                        } else {
-                            playSong()
-                        }
-                    },
-                    iconResId = if (isPlaying) R.drawable.baseline_pause_24 else R.drawable.baseline_play_arrow_24
-                )
-                TransparentButton(onClick = { nextSong() }, iconResId = R.drawable.ic_next)
+                IconButton(onClick = { previousSong() }) {
+                    Icon(painterResource(id = R.drawable.ic_previous), contentDescription = "Previous", tint = Color.White)
+                }
+                IconButton(onClick = {
+                    if (isPlaying) {
+                        pauseSong()
+                    } else {
+                        playSong()
+                    }
+                }) {
+                    Icon(
+                        painterResource(id = if (isPlaying) R.drawable.baseline_pause_24 else R.drawable.baseline_play_arrow_24),
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = Color.White
+                    )
+                }
+                IconButton(onClick = { nextSong() }) {
+                    Icon(painterResource(id = R.drawable.ic_next), contentDescription = "Next", tint = Color.White)
+                }
+            }
+
+            // Lista de canciones
+            Spacer(modifier = Modifier.height(32.dp)) // Espacio entre controles y lista de canciones
+
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(songs) { song ->
+                    SongItem(song = song, onClick = {
+                        currentSongIndex = songs.indexOf(song)
+                        playSong()
+                    })
+                }
             }
         }
     }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        item {
-
-        }
-    }
 }
 
 @Composable
-fun TransparentButton(onClick: () -> Unit, iconResId: Int, iconColor: Color = Color.White) {
-    Button(
-        onClick, Modifier
+fun SongItem(song: Song, onClick: () -> Unit) {
+
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
             .padding(8.dp)
-            .background(Color.Transparent),
-        colors = ButtonDefaults.run {
-            return@run colors(
-                Color.Transparent, // Establecer el color de fondo transparente
-                contentColor = Color.White // Establecer el color del contenido del botón
-            )
-        }
+            .clickable(onClick = onClick)
+            .background(Color.Gray.copy(alpha = 0.3f)) // Color de fondo para la lista de canciones
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = iconResId),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(iconColor),
-            modifier = Modifier.size(40.dp)
-        )
+
+            Image(
+                painter = painterResource(id = song.backgroundResId),
+                contentDescription = null,
+                modifier = Modifier.size(50.dp),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = song.title,
+                color = Color.White,
+                fontSize = 16.sp
+            )
+
     }
 }
 
-data class Song(val backgroundResId: Int, val audioResId: Int, val title: String)
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun Navegacion() {
-    val navController = rememberNavController()
-    val context = LocalContext.current
-
-    NavHost(navController, startDestination = "RutaUno") {
-        composable("RutaUno") { Portada(navController) }
-        composable("RutaDos") { SmartTvScreen(navController = navController, context = context) }
-        composable("music_screen") { MusicScreen(navController = navController) }
-    }
-}
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Producto3</string>
+    <string name="com_google_android_youtube_tv">com.google.android.youtube.tv</string>
 </resources>
