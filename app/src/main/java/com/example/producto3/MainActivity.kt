@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
@@ -59,7 +60,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.tv.foundation.lazy.list.rememberTvLazyListState
 import com.example.producto3.ui.theme.Producto3Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -328,7 +328,7 @@ fun SmartTvScreen(navController: NavController) {
 //Carrusel
 @Composable
 fun AutoScrollingCarousel(movieList: List<Movie>, navController: NavController) {
-    val scrollState = rememberTvLazyListState()
+    val scrollState = rememberLazyListState()
     val scrollInterval = 3000L
     val scrollAmount = 1
 
@@ -366,7 +366,6 @@ fun AutoScrollingCarousel(movieList: List<Movie>, navController: NavController) 
         }
     }
 }
-
 
 //Pantalla para el visto de descripccion
 @Composable
