@@ -6,12 +6,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -23,11 +28,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Icon
@@ -45,12 +49,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -60,6 +68,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import androidx.wear.compose.foundation.lazy.AutoCenteringParams
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
 import com.example.producto3.ui.theme.Producto3Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -80,12 +92,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape
                 ) {
-                    Navegacion()
+                    // Configura el NavHost con el NavController
+                    val navController = rememberNavController()
+                    Navegacion(navController)
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun Imagen(id: Int) {
@@ -234,15 +249,28 @@ fun Portada(navController: NavController) {
 @Composable
 fun SmartTvScreen(navController: NavController) {
     val context = LocalContext.current
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Black)
-            .padding(16.dp)
-    ) {
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Imagen de fondo
+        Image(
+            painter = painterResource(id = R.drawable.fondo), // Imagen de fondo
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Capa semitransparente para oscurecer la imagen
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.7f)) // Color negro con opacidad para oscurecer
+        )
+
+        // Contenido principal de la pantalla
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(16.dp) // Añade el padding para el contenido
         ) {
             Row(
                 modifier = Modifier
@@ -285,10 +313,14 @@ fun SmartTvScreen(navController: NavController) {
                         val movie = movieList[index]
                         Image(
                             painter = painterResource(id = movie.imageResId),
-                            contentDescription = null,
+                            contentDescription = movie.title,
                             modifier = Modifier
-                                .fillMaxHeight()
                                 .size(120.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    // Navegar a la pantalla de descripción
+                                    navController.navigate("Description/${movie.title}")
+                                }
                         )
                     }
                 }
@@ -313,8 +345,8 @@ fun SmartTvScreen(navController: NavController) {
                                 "Netflix" -> openCrunchyrollApp(context)
                                 "Google" -> openGoogleApp(context)
                                 "Play Store" -> openPlayStoreApp(context)
-                                "Hulu" -> openSpotifyApp(context)
-                                else -> navController.navigate("detail_screen/$selectedApp")
+                                "Hulu" -> navController.navigate("Lombriz")
+                                else -> navController.navigate("Description/$selectedApp")
                             }
                         }
                     }
@@ -323,6 +355,9 @@ fun SmartTvScreen(navController: NavController) {
         }
     }
 }
+
+
+
 
 
 //Carrusel
@@ -376,12 +411,9 @@ fun MovieDescriptionScreen(navController: NavController, movieTitle: String?) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Black)
+                .background(Color.Black)
         ) {
-            // Muestra el video
-            VideoPlayer(url = movie.videoUrl)
-
-            // Muestra la imagen con un gradiente
+            // Muestra la imagen
             Image(
                 painter = painterResource(id = movie.imageResId),
                 contentDescription = null,
@@ -391,10 +423,12 @@ fun MovieDescriptionScreen(navController: NavController, movieTitle: String?) {
                     .height(300.dp)
             )
 
+            // Box para el fondo negro transparente
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Brush.verticalGradient(colors = listOf(Color.Transparent, Black), startY = 300f))
+                    //.background(Color.Transparent.copy(alpha = 0.5f)) // Asegúrate de usar un alpha adecuado
+                    .align(Alignment.BottomStart)
             )
 
             Column(
@@ -413,7 +447,7 @@ fun MovieDescriptionScreen(navController: NavController, movieTitle: String?) {
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 Text(
-                    text = "Fecha de lanzamiento: ${movie.releaseDate}",
+                    text = movie.releaseDate,
                     fontSize = 16.sp,
                     color = Color.White,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -434,6 +468,8 @@ fun MovieDescriptionScreen(navController: NavController, movieTitle: String?) {
         )
     }
 }
+
+
 
 
 @Composable
@@ -519,7 +555,6 @@ fun MusicScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Black)
     ) {
         // Imagen de fondo de la canción actual
         Image(
@@ -528,7 +563,13 @@ fun MusicScreen(navController: NavController) {
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .alpha(0.5f) // Opcional: reducir la opacidad de la imagen de fondo
+        )
+
+        // Capa semitransparente sobre la imagen de fondo
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f)) // Ajusta el color y la opacidad
         )
 
         Column(
@@ -536,6 +577,25 @@ fun MusicScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
+            // Imagen superior
+            // Imagen superior centrada
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp) // Ajusta la altura de la imagen superior
+                    .padding(bottom = 16.dp), // Espacio debajo de la imagen
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.fondo), // Reemplaza con tu recurso de imagen
+                    contentDescription = null,
+                    modifier = Modifier
+                        .height(120.dp) // Ajusta la altura de la imagen
+                        .fillMaxWidth(0.8f), // Ajusta el ancho para que sea menos ancho que el contenedor
+                    contentScale = ContentScale.Crop
+                )
+            }
+
             // Título de la canción actual
             Text(
                 text = songs[currentSongIndex].title,
@@ -552,33 +612,46 @@ fun MusicScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                IconButton(onClick = { previousSong() }) {
+                IconButton(
+                    onClick = { previousSong() },
+                    modifier = Modifier.size(48.dp) // Tamaño del botón
+                ) {
                     Icon(painterResource(id = R.drawable.ic_previous), contentDescription = "Previous", tint = Color.White)
                 }
-                IconButton(onClick = {
-                    if (isPlaying) {
-                        pauseSong()
-                    } else {
-                        playSong()
-                    }
-                }) {
+                IconButton(
+                    onClick = {
+                        if (isPlaying) {
+                            pauseSong()
+                        } else {
+                            playSong()
+                        }
+                    },
+                    modifier = Modifier.size(48.dp) // Tamaño del botón
+                ) {
                     Icon(
                         painterResource(id = if (isPlaying) R.drawable.baseline_pause_24 else R.drawable.baseline_play_arrow_24),
                         contentDescription = if (isPlaying) "Pause" else "Play",
                         tint = Color.White
                     )
                 }
-                IconButton(onClick = { nextSong() }) {
+                IconButton(
+                    onClick = { nextSong() },
+                    modifier = Modifier.size(48.dp) // Tamaño del botón
+                ) {
                     Icon(painterResource(id = R.drawable.ic_next), contentDescription = "Next", tint = Color.White)
                 }
             }
 
-            // Lista de canciones
+            // Lista de canciones horizontal
             Spacer(modifier = Modifier.height(32.dp)) // Espacio entre controles y lista de canciones
 
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ScalingLazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp), // Ajusta la altura para la vista de la lista
+                horizontalAlignment = Alignment.CenterHorizontally,
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                autoCentering = AutoCenteringParams(itemIndex = 0) // Ajuste para centrar automáticamente el primer elemento
             ) {
                 items(songs) { song ->
                     SongItem(song = song, onClick = {
@@ -593,39 +666,161 @@ fun MusicScreen(navController: NavController) {
 
 @Composable
 fun SongItem(song: Song, onClick: () -> Unit) {
-
-
-    Row(
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
+            .width(200.dp) // Tamaño más largo para los contenedores
+            .padding(4.dp)
             .clickable(onClick = onClick)
             .background(Color.Gray.copy(alpha = 0.3f)) // Color de fondo para la lista de canciones
+            .border(1.dp, Color.Gray) // Añade un borde para mayor claridad
             .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
-
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Image(
                 painter = painterResource(id = song.backgroundResId),
                 contentDescription = null,
-                modifier = Modifier.size(50.dp),
+                modifier = Modifier
+                    .size(120.dp) // Tamaño de la imagen
+                    .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = song.title,
                 color = Color.White,
-                fontSize = 16.sp
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center
             )
-
+        }
     }
 }
+@Composable
+fun SnakeGameScreen(navController: NavController) {
+    var gameState by remember { mutableStateOf(SnakeGameState(
+        snake = listOf(Pair(5, 5)),
+        food = Pair(10, 10),
+        direction = Direction.RIGHT,
+        isGameOver = false
+    )) }
+
+    val canvasModifier = Modifier
+        .fillMaxSize()
+        .background(Color.Black)
+        .focusable() // Permite que el canvas reciba eventos de teclado
+
+    Canvas(modifier = canvasModifier) {
+        val snakeColor = Color.Green
+        val foodColor = Color.Red
+        val cellSize = size.width / 20 // Tamaño de las celdas del juego
+
+        // Dibuja la lombriz
+        gameState.snake.forEach { segment ->
+            drawRect(
+                color = snakeColor,
+                topLeft = Offset(segment.first * cellSize, segment.second * cellSize),
+                size = Size(cellSize, cellSize)
+            )
+        }
+
+        // Dibuja la comida
+        drawRect(
+            color = foodColor,
+            topLeft = Offset(gameState.food.first * cellSize, gameState.food.second * cellSize),
+            size = Size(cellSize, cellSize)
+        )
+    }
+
+    // Manejo de eventos del teclado
+    Modifier.onKeyEvent { keyEvent ->
+        when (keyEvent.key) {
+            Key.DirectionUp -> {
+                if (gameState.direction != Direction.DOWN) {
+                    gameState = gameState.copy(direction = Direction.UP)
+                }
+                true
+            }
+            Key.DirectionDown -> {
+                if (gameState.direction != Direction.UP) {
+                    gameState = gameState.copy(direction = Direction.DOWN)
+                }
+                true
+            }
+            Key.DirectionLeft -> {
+                if (gameState.direction != Direction.RIGHT) {
+                    gameState = gameState.copy(direction = Direction.LEFT)
+                }
+                true
+            }
+            Key.DirectionRight -> {
+                if (gameState.direction != Direction.LEFT) {
+                    gameState = gameState.copy(direction = Direction.RIGHT)
+                }
+                true
+            }
+            else -> false
+        }
+    }
+
+    // Actualiza el estado del juego
+    LaunchedEffect(gameState.isGameOver) {
+        while (!gameState.isGameOver) {
+            delay(200) // Controla la velocidad del juego
+            gameState = updateGameState(gameState)
+        }
+    }
+}
+
+fun updateGameState(state: SnakeGameState): SnakeGameState {
+    // Lógica para mover la lombriz
+    val newHead = when (state.direction) {
+        Direction.UP -> Pair(state.snake.first().first, state.snake.first().second - 1)
+        Direction.DOWN -> Pair(state.snake.first().first, state.snake.first().second + 1)
+        Direction.LEFT -> Pair(state.snake.first().first - 1, state.snake.first().second)
+        Direction.RIGHT -> Pair(state.snake.first().first + 1, state.snake.first().second)
+    }
+
+    val newSnake = listOf(newHead) + state.snake.dropLast(1)
+
+    // Verifica si la lombriz ha comido la comida
+    val newFood = if (newHead == state.food) {
+        val newFoodPosition = generateNewFoodPosition(newSnake)
+        Pair(newFoodPosition.first, newFoodPosition.second)
+    } else {
+        state.food
+    }
+
+    // Verifica colisiones
+    val isGameOver = newHead.first < 0 || newHead.second < 0 || newHead.first >= 20 || newHead.second >= 20 || newSnake.contains(newHead)
+
+    return state.copy(
+        snake = newSnake,
+        food = newFood,
+        isGameOver = isGameOver
+    )
+}
+
+fun generateNewFoodPosition(snake: List<Pair<Int, Int>>): Pair<Int, Int> {
+    var position: Pair<Int, Int>
+    do {
+        position = Pair((0..19).random(), (0..19).random())
+    } while (snake.contains(position))
+    return position
+}
+
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
+    // Proporciona un NavController simulado para la vista previa
+    val navController = rememberNavController()
     Producto3Theme {
-        Navegacion()
+        Surface(modifier = Modifier.fillMaxSize()) {
+            Navegacion(navController)
+        }
     }
 }
