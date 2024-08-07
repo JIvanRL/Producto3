@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +33,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -50,15 +50,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -69,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.wear.compose.foundation.lazy.AutoCenteringParams
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
@@ -92,7 +90,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape
                 ) {
-                    // Configura el NavHost con el NavController
                     val navController = rememberNavController()
                     Navegacion(navController)
                 }
@@ -100,7 +97,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 
 @Composable
 fun Imagen(id: Int) {
@@ -491,7 +487,7 @@ fun getAppImageResource(appName: String): Int {
         "YouTube" -> R.drawable.youtube
         "Netflix" -> R.drawable.netflix
         "Prime Video" -> R.drawable.prime_video
-        "Hulu" -> R.drawable.hulu
+        "Hulu" -> R.drawable.girar
         "Disney+" -> R.drawable.disney_plus
         "Spotify" -> R.drawable.spotify
         "Twitch" -> R.drawable.twitch
@@ -699,10 +695,10 @@ fun SongItem(song: Song, onClick: () -> Unit) {
 }
 @Composable
 fun SnakeGameScreen(navController: NavController) {
-    var gameState by remember { mutableStateOf(SnakeGameState(
+    var gameState by remember { mutableStateOf(GameState(
         snake = listOf(Pair(5, 5)),
         food = Pair(10, 10),
-        direction = Direction.RIGHT,
+        direction = GameDirection.RIGHT,
         isGameOver = false
     )) }
 
@@ -716,20 +712,20 @@ fun SnakeGameScreen(navController: NavController) {
         val foodColor = Color.Red
         val cellSize = size.width / 20 // Tamaño de las celdas del juego
 
-        // Dibuja la lombriz
+        // Dibuja la serpiente
         gameState.snake.forEach { segment ->
             drawRect(
                 color = snakeColor,
-                topLeft = Offset(segment.first * cellSize, segment.second * cellSize),
-                size = Size(cellSize, cellSize)
+                topLeft = androidx.compose.ui.geometry.Offset(segment.first * cellSize, segment.second * cellSize),
+                size = androidx.compose.ui.geometry.Size(cellSize, cellSize)
             )
         }
 
         // Dibuja la comida
         drawRect(
             color = foodColor,
-            topLeft = Offset(gameState.food.first * cellSize, gameState.food.second * cellSize),
-            size = Size(cellSize, cellSize)
+            topLeft = androidx.compose.ui.geometry.Offset(gameState.food.first * cellSize, gameState.food.second * cellSize),
+            size = androidx.compose.ui.geometry.Size(cellSize, cellSize)
         )
     }
 
@@ -737,26 +733,26 @@ fun SnakeGameScreen(navController: NavController) {
     Modifier.onKeyEvent { keyEvent ->
         when (keyEvent.key) {
             Key.DirectionUp -> {
-                if (gameState.direction != Direction.DOWN) {
-                    gameState = gameState.copy(direction = Direction.UP)
+                if (gameState.direction != GameDirection.DOWN) {
+                    gameState = gameState.copy(direction = GameDirection.UP)
                 }
                 true
             }
             Key.DirectionDown -> {
-                if (gameState.direction != Direction.UP) {
-                    gameState = gameState.copy(direction = Direction.DOWN)
+                if (gameState.direction != GameDirection.UP) {
+                    gameState = gameState.copy(direction = GameDirection.DOWN)
                 }
                 true
             }
             Key.DirectionLeft -> {
-                if (gameState.direction != Direction.RIGHT) {
-                    gameState = gameState.copy(direction = Direction.LEFT)
+                if (gameState.direction != GameDirection.RIGHT) {
+                    gameState = gameState.copy(direction = GameDirection.LEFT)
                 }
                 true
             }
             Key.DirectionRight -> {
-                if (gameState.direction != Direction.LEFT) {
-                    gameState = gameState.copy(direction = Direction.RIGHT)
+                if (gameState.direction != GameDirection.LEFT) {
+                    gameState = gameState.copy(direction = GameDirection.RIGHT)
                 }
                 true
             }
@@ -773,18 +769,18 @@ fun SnakeGameScreen(navController: NavController) {
     }
 }
 
-fun updateGameState(state: SnakeGameState): SnakeGameState {
-    // Lógica para mover la lombriz
+fun updateGameState(state: GameState): GameState {
+    // Lógica para mover la serpiente
     val newHead = when (state.direction) {
-        Direction.UP -> Pair(state.snake.first().first, state.snake.first().second - 1)
-        Direction.DOWN -> Pair(state.snake.first().first, state.snake.first().second + 1)
-        Direction.LEFT -> Pair(state.snake.first().first - 1, state.snake.first().second)
-        Direction.RIGHT -> Pair(state.snake.first().first + 1, state.snake.first().second)
+        GameDirection.UP -> Pair(state.snake.first().first, state.snake.first().second - 1)
+        GameDirection.DOWN -> Pair(state.snake.first().first, state.snake.first().second + 1)
+        GameDirection.LEFT -> Pair(state.snake.first().first - 1, state.snake.first().second)
+        GameDirection.RIGHT -> Pair(state.snake.first().first + 1, state.snake.first().second)
     }
 
     val newSnake = listOf(newHead) + state.snake.dropLast(1)
 
-    // Verifica si la lombriz ha comido la comida
+    // Verifica si la serpiente ha comido la comida
     val newFood = if (newHead == state.food) {
         val newFoodPosition = generateNewFoodPosition(newSnake)
         Pair(newFoodPosition.first, newFoodPosition.second)
@@ -810,6 +806,170 @@ fun generateNewFoodPosition(snake: List<Pair<Int, Int>>): Pair<Int, Int> {
     return position
 }
 
+data class GameState(
+    val snake: List<Pair<Int, Int>>,
+    val food: Pair<Int, Int>,
+    val direction: GameDirection,
+    val isGameOver: Boolean
+)
+
+enum class GameDirection {
+    UP, DOWN, LEFT, RIGHT
+}
+
+@OptIn(ExperimentalTvMaterial3Api::class)
+@Composable
+fun TicTacToeGame(navController: NavController) {
+    var board by remember { mutableStateOf(List(3) { MutableList(3) { "" } }) }
+    var currentPlayer by remember { mutableStateOf("X") }
+    var winner by remember { mutableStateOf<String?>(null) }
+    var xWins by remember { mutableStateOf(0) }
+    var oWins by remember { mutableStateOf(0) }
+    var isDraw by remember { mutableStateOf(false) }
+
+    val primaryColor = Color(0xFF4CAF50) // Green
+    val secondaryColor = Color(0xFF388E3C) // Darker Green
+    val backgroundColor = Color(0xFF2E7D32) // Darkest Green
+    val textColor = Color.White
+    val winnerColor = Color.Yellow
+    val drawColor = Color.Gray
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Jugador actual: $currentPlayer",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        for (row in 0 until 3) {
+            Row {
+                for (col in 0 until 3) {
+                    Box(
+                        modifier = Modifier
+                            .size(90.dp)
+                            .background(primaryColor)
+                            .border(2.dp, secondaryColor)
+                            .clickable {
+                                if (board[row][col].isEmpty() && winner == null && !isDraw) {
+                                    board = board.toMutableList().also {
+                                        it[row] = it[row].toMutableList().also { rowList ->
+                                            rowList[col] = currentPlayer
+                                        }
+                                    }
+                                    winner = checkWinner(board)
+                                    if (winner == null) {
+                                        if (board.flatten().none { it.isEmpty() }) {
+                                            isDraw = true
+                                        } else {
+                                            currentPlayer = if (currentPlayer == "X") "O" else "X"
+                                        }
+                                    } else {
+                                        if (winner == "X") xWins += 1 else oWins += 1
+                                    }
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = board[row][col], fontSize = 36.sp, color = textColor, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        when {
+            winner != null -> {
+                Text(
+                    text = "Ganador: $winner",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = winnerColor,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            isDraw -> {
+                Text(
+                    text = "Nadie ganó",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = drawColor,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 32.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Text(
+                text = "X: $xWins",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColor,
+                modifier = Modifier.padding(8.dp)
+            )
+            Text(
+                text = "O: $oWins",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColor,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Button(
+                onClick = {
+                    board = List(3) { MutableList(3) { "" } }
+                    currentPlayer = "X"
+                    winner = null
+                    isDraw = false
+                },
+                colors = ButtonDefaults.buttonColors(backgroundColor = primaryColor),
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text(text = "Reiniciar Juego", fontSize = 20.sp, color = textColor)
+            }
+        }
+    }
+}
+
+fun checkWinner(board: List<List<String>>): String? {
+    // Check rows and columns
+    for (i in 0 until 3) {
+        if (board[i][0].isNotEmpty() && board[i][0] == board[i][1] && board[i][1] == board[i][2]) {
+            return board[i][0]
+        }
+        if (board[0][i].isNotEmpty() && board[0][i] == board[1][i] && board[1][i] == board[2][i]) {
+            return board[0][i]
+        }
+    }
+
+    // Check diagonals
+    if (board[0][0].isNotEmpty() && board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
+        return board[0][0]
+    }
+    if (board[0][2].isNotEmpty() && board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
+        return board[0][2]
+    }
+
+    return null
+}
 
 
 @RequiresApi(Build.VERSION_CODES.O)

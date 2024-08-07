@@ -13,13 +13,11 @@ import androidx.navigation.navArgument
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Navegacion(navController: NavHostController) {
-    val navController = rememberNavController()
-
     NavHost(navController, startDestination = "RutaUno") {
         composable("RutaUno") { Portada(navController) }
         composable("RutaDos") { SmartTvScreen(navController = navController) }
         composable("music_screen") { MusicScreen(navController = navController) }
-        composable("Lombriz") { SnakeGameScreen(navController = navController) }
+        composable("Lombriz") { TicTacToeGame(navController = navController) }
         composable(
             "Description/{movieTitle}",
             arguments = listOf(navArgument("movieTitle") { type = NavType.StringType })
